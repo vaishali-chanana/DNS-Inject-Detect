@@ -39,7 +39,7 @@ def dns_inject(packet):
 			send(spoofed_pkt)
 
 if __name__ == '__main__':
-	print(os.sys.path)
+	#print(os.sys.path)
 	#os.sys.path.append('/usr/local/lib/python3.5/site-packages')
 	interface,hostfile,expression = check_arg()
 	hostFlag=0
