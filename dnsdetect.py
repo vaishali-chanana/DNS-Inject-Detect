@@ -19,20 +19,28 @@ def dns_detect(packet):
 		list1=[]
 		for i in range(packet[DNS].ancount):
 			list1.append(packet[DNS].an[i].rdata)
+
+		src1 = packet.src
+		ttl1 = packet[IP].ttl
+
 		if(packet[DNS].id in packet_dict.keys()):
 			rdata1 = list1
-			rdata2 = packet_dict[packet[DNS].id]
+			rdata2 = packet_dict[packet[DNS].id][2]
+			#src1 = packet.src
+			src2 = packet_dict[packet[DNS].id][0]
+			# ...............Get TTL......................
+			#ttl1 = packet[IP].ttl
+			ttl2 = packet_dict[packet[DNS].id][1]
 			# ...............Check for no intersection ....................
 			rdata = list(set(rdata1) & set(rdata2))
 			if not rdata:
-			#if(rdata1!=rdata2):
-				print(datetime.datetime.now(),"DNS poisoning detected")
-				print("TXID", packet[DNS].id, "Request", packet[DNS].qd.qname.decode('ASCII')[:-1])
-				print("Answer1", rdata2)
-				print("Answer2", rdata1)
+				if(src1!=src2 or ttl1!=ttl2):
+					print(datetime.datetime.now(),"DNS poisoning detected")
+					print("TXID", packet[DNS].id, "Request", packet[DNS].qd.qname.decode('ASCII')[:-1])
+					print("Answer1", rdata2)
+					print("Answer2", rdata1)
 		else:
-			packet_dict[packet[DNS].id] = list1
-			#print(packet_dict)
+			packet_dict[packet[DNS].id] = (src1,ttl1,list1)
         
 if __name__ == '__main__':
 	interface,tracefile,expression = check_arg()
