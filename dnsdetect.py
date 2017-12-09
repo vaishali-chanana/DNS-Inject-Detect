@@ -35,7 +35,8 @@ def dns_detect(packet):
 			rdata = list(set(rdata1) & set(rdata2))
 			if not rdata:
 				if(src1!=src2 or ttl1!=ttl2):
-					print(datetime.datetime.now(),"DNS poisoning detected")
+					#print(packet.time,"DNS Detected")
+					print(datetime.datetime.fromtimestamp(packet.time).strftime('%Y%m%d-%H:%M:%S'),"DNS poisoning detected")
 					print("TXID", packet[DNS].id, "Request", packet[DNS].qd.qname.decode('ASCII')[:-1])
 					print("Answer1", rdata2)
 					print("Answer2", rdata1)
