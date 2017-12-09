@@ -1,6 +1,7 @@
 import argparse
 import os
 from scapy.all import *
+import datetime
 packet_dict={}
 
 def check_arg():
@@ -13,28 +14,25 @@ def check_arg():
 	return args.i, args.r, args.expression
 
 def dns_detect(packet):
-	#packet.show()
 	if(packet.haslayer(DNSRR)):
+		#packet.show()
 		list1=[]
 		for i in range(packet[DNS].ancount):
-			print("type",packet[DNS].an[i].type)
-			#if(packet[DNS].an[i].type=="A"):
-			print("rdata", packet[DNS].an[i].rdata)
 			list1.append(packet[DNS].an[i].rdata)
 		if(packet[DNS].id in packet_dict.keys()):
-			# .............. Make list for both ............................
 			rdata1 = list1
 			rdata2 = packet_dict[packet[DNS].id]
-			print(rdata1)
-			print(rdata2)
 			# ...............Check for no intersection ....................
-			if(rdata1!=rdata2):
+			rdata = list(set(rdata1) & set(rdata2))
+			if not rdata:
+			#if(rdata1!=rdata2):
+				print(datetime.datetime.now(),"DNS poisoning detected")
 				print("TXID", packet[DNS].id, "Request", packet[DNS].qd.qname.decode('ASCII')[:-1])
 				print("Answer1", rdata2)
 				print("Answer2", rdata1)
 		else:
 			packet_dict[packet[DNS].id] = list1
-			print(packet_dict)
+			#print(packet_dict)
         
 if __name__ == '__main__':
 	interface,tracefile,expression = check_arg()
@@ -44,7 +42,9 @@ if __name__ == '__main__':
 
 	rFlag=0
 	iFlag=0
-	packets = rdpcap(tracefile)
+	#packets = rdpcap(tracefile)
+	if not expression:
+		expression=""
 	if(tracefile!=None):
 		rFlag = 1
 		packets = rdpcap(tracefile)
@@ -52,8 +52,8 @@ if __name__ == '__main__':
 			dns_detect(packet)      
 	elif(interface!=None):
 		iFlag = 1
-		sniff(filter="udp port 53", prn=dns_detect, store=0, iface=interface)
+		sniff(filter=expression, prn=dns_detect, store=0, iface=interface)
 	else:
 		# ........................Figure out a way to get default interface ......................
-		interface = 'ens33'
-		sniff(filter="udp port 53", prn = dns_detect, store =0, iface=interface)
+		#interface = 'ens33'
+		sniff(filter=expression, prn = dns_detect, store =0)
