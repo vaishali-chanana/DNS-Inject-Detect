@@ -1,0 +1,72 @@
+----------------------------------
+Dnsinject
+----------------------------------
+1. How to run
+	sudo python3 dnsinject.py -h <hostfile> -i <interface>
+	
+	A working sample:
+	sudo python3 dnsinject.py -h hostnames
+	
+Here the "hostnames" is the name of the file that is also attached in tarball. One should have Python3 installed on the system along with the path
+set to Python3 execuatable. A sample output is also atatched in the tarball as "detect.pcap" where you can see one successful attempt to spoofed
+DNS reply for www.youtube.com
+
+2. General design
+	If the hostfile is mentioned, I am creating a map with domain name as the key and the IP to be spoofed as the value. I am using Scapy library
+	to sniff the packets from either the mentioned interface or all if nothing is mentioned.
+	
+	The sniff callback function checks the domain name from the packet if it is there in the file. If yes, then a new packet is spoofed with
+	the src, destination as the destination and src of the DNS query packet respectively. packet ancount is to be checked so that the DNS spoofed
+	reply is not being treated again as the DNS query.
+	
+3. OS version - Ubuntu 16.04.3 LTS
+	Language - Python 3
+	Libraries used - Scapy
+	(Scapy can be installed by using "pip3 install scapy-python3")
+	
+
+
+-----------------------------------------------
+Dnsdetect
+-----------------------------------------------
+1. How to run
+	python3 dnsdetect.py [-i <interface>] [-r <tracefile>] [bpf filter]
+	
+	A working sample:
+	python3 dnsdetect.py -r detect.pcap
+	
+Here, by default, the tracefile will be picked for sniffing if both the options are present. If none of the options are present, then it will
+use packet from the default interface
+
+2. General Design
+	Maintaining a packet_dict map with TXNid as key and a tuple of src MAC, reply TTL and set of response IP addresses as value. 
+	This helps us to know which TXNid has more than one reply and then we figure out the null intersections of the IP addresses
+	to assert DNS poisoning.
+
+	False positives are being handled by checking src MAC address and TTL values as these values will always be the same for 
+	the legitimate responses.
+	
+3. OS version - Ubuntu 16.04.3 LTS
+	Language - Python 3
+	Libraries used - Scapy
+	(Scapy can be installed by using "pip3 install scapy-python3")
+	
+4. Detection output:
+20171208-21:36:39 DNS poisoning detected
+TXID 27297 Request www.youtube.com
+Answer1 [b'youtube-ui.l.google.com.', '172.217.3.110', '172.217.6.238', '172.217.7.14', '172.217.10.238', '172.217.11.14', 
+'172.217.11.46', '172.217.12.174', '172.217.12.206', '216.58.219.206', '216.58.219.238', '172.217.10.14', '172.217.10.46', 
+'172.217.10.78', '172.217.10.110']
+Answer2 ['10.6.6.6']
+
+
+-------------------------------------
+References
+-------------------------------------
+https://docs.python.org/2/library/argparse.html - Argument Parser
+https://incognitjoe.github.io/reading-pcap-with-scapy.html - scapy read pcap-with-scapy
+http://www.geeksforgeeks.org/byte-objects-vs-string-python/ - decode byte strings for domain name
+https://serverfault.com/questions/690391/finding-local-ip-addresses-using-pythons-stdlib-under-debian-jessie - to find local IP
+http://www.cs.dartmouth.edu/~sergey/netreads/local/reliable-dns-spoofing-with-python-scapy-nfqueue.html#selection-301.0-369.2 - to use scapy
+
+

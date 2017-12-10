@@ -13,6 +13,16 @@ def check_arg():
 
 	return args.i, args.r, args.expression
 
+###########################################################################
+# Callback function for sniff or for reading pcap tracefile
+# Maintaining a packet_dict map with TXNid as key and a tuple of src MAC,
+# reply TTl and set of response IP addresses as value. This helps us to know
+# which TXNid has more than one reply and then we figure out the null intersections
+# of the IP addresses to assert DNS poisoning.
+#
+# False positives are being handled by checking src MAC address and TTL values
+# as these values will always be the same for the legitimate responses.
+###########################################################################
 def dns_detect(packet):
 	if(packet.haslayer(DNSRR)):
 		#packet.show()
@@ -26,16 +36,13 @@ def dns_detect(packet):
 		if(packet[DNS].id in packet_dict.keys()):
 			rdata1 = list1
 			rdata2 = packet_dict[packet[DNS].id][2]
-			#src1 = packet.src
 			src2 = packet_dict[packet[DNS].id][0]
 			# ...............Get TTL......................
-			#ttl1 = packet[IP].ttl
 			ttl2 = packet_dict[packet[DNS].id][1]
 			# ...............Check for no intersection ....................
 			rdata = list(set(rdata1) & set(rdata2))
 			if not rdata:
 				if(src1!=src2 or ttl1!=ttl2):
-					#print(packet.time,"DNS Detected")
 					print(datetime.datetime.fromtimestamp(packet.time).strftime('%Y%m%d-%H:%M:%S'),"DNS poisoning detected")
 					print("TXID", packet[DNS].id, "Request", packet[DNS].qd.qname.decode('ASCII')[:-1])
 					print("Answer1", rdata2)
@@ -45,9 +52,9 @@ def dns_detect(packet):
         
 if __name__ == '__main__':
 	interface,tracefile,expression = check_arg()
-	print("interface",interface)
-	print("tracefile", tracefile)   
-	print("expression",expression)
+	#print("interface",interface)
+	#print("tracefile", tracefile)   
+	#print("expression",expression)
 
 	rFlag=0
 	iFlag=0
@@ -56,13 +63,12 @@ if __name__ == '__main__':
 		expression=""
 	if(tracefile!=None):
 		rFlag = 1
-		packets = rdpcap(tracefile)
-		for packet in packets:
-			dns_detect(packet)      
+		sniff(filter=expression, prn=dns_detect, store=0, offline=tracefile)
+		#packets = rdpcap(tracefile)
+		#for packet in packets:
+		#	dns_detect(packet)      
 	elif(interface!=None):
 		iFlag = 1
 		sniff(filter=expression, prn=dns_detect, store=0, iface=interface)
 	else:
-		# ........................Figure out a way to get default interface ......................
-		#interface = 'ens33'
 		sniff(filter=expression, prn = dns_detect, store =0)
